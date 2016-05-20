@@ -25,9 +25,13 @@ public class ServerApp extends Application {
 	private Stage primaryStage;
 	private BorderPane rootLayout;
 
+	private Database database;
+	private String curentPcView;
 	private ObservableList<PCInfoViewWrapper> pcData = FXCollections.observableArrayList();
 
 	public ServerApp(){
+		database = new Database("jdbc:mysql://localhost:3306/inventory", "root", "root");
+		database.connect();
 		String hostname = "MichaelPc";
 		String ipAddress = "192.168.1.10";
 		String macAddress = "5E:FF:56:A2:AF:15";
@@ -39,7 +43,7 @@ public class ServerApp extends Application {
 		programViewWrappers.add(new Program("ls", "1.2"));
 		programViewWrappers.add(new Program("cat", "2.3"));
 
-		pcData.add(new PCInfoViewWrapper(hostname, ipAddress, macAddress, os, cpu, hdd, ramSize, programViewWrappers));
+		//pcData.add(new PCInfoViewWrapper(hostname, ipAddress, macAddress, os, cpu, hdd, ramSize, programViewWrappers));
 
 		hostname = "LuciePc";
 		ipAddress = "192.168.1.11";
@@ -49,44 +53,46 @@ public class ServerApp extends Application {
 		hdd = new HDDInfo(500.8, 400.4);
 		ramSize = 8;
 
-		pcData.add(new PCInfoViewWrapper(hostname, ipAddress, macAddress, os, cpu, hdd, ramSize, programViewWrappers));
-
+		//pcData.add(new PCInfoViewWrapper(hostname, ipAddress, macAddress, os, cpu, hdd, ramSize, programViewWrappers));
 		//pcData.add(SystemInfoRecuperator.retrievePCInfo());
-		/*SystemInfoRetrieverServer sirs = null;
-		try {
-			sirs = new SystemInfoRetrieverServer(SystemInfoRetrieverProtocol.UDP_PORT, SystemInfoRetrieverProtocol.TCP_PORT);
-			sirs.retrieveInfosFromClients();
-
-		} catch (SocketException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
-		LinkedList<PCInfo> pcInfos = sirs.getPcInfos();
-
-
-
-		for(PCInfo pc : pcInfos){
-			System.out.println(pc.getHostname());
-			System.out.println(pc.getIpAddress());
-			System.out.println(pc.getMacAddress());
-			System.out.println(pc.getOs());
-			System.out.println(pc.getRamSize());
-			System.out.println(pc.getCpu().getConstructor());
-			System.out.println(pc.getCpu().getModel());
-			System.out.println(pc.getHdd().getFreeSize());
-
-
-			pcData.add(new PCInfoViewWrapper(pc));
-		}*/
+//		SystemInfoRetrieverServer sirs = null;
+//		try {
+//			sirs = new SystemInfoRetrieverServer(SystemInfoRetrieverProtocol.UDP_PORT, SystemInfoRetrieverProtocol.TCP_PORT);
+//			sirs.retrieveInfosFromClients();
+//
+//		} catch (SocketException e) {
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
+//		LinkedList<PCInfo> pcInfos = sirs.getPcInfos();
+//
+//
+//
+//		for(PCInfo pc : pcInfos){
+//			System.out.println(pc.getHostname());
+//			System.out.println(pc.getIpAddress());
+//			System.out.println(pc.getMacAddress());
+//			System.out.println(pc.getOs());
+//			System.out.println(pc.getRamSize());
+//			System.out.println(pc.getCpu().getConstructor());
+//			System.out.println(pc.getCpu().getModel());
+//			System.out.println(pc.getHdd().getFreeSize());
+//
+//
+//			pcData.add(new PCInfoViewWrapper(pc));
+//		}
 	}
 
 	public ObservableList<PCInfoViewWrapper> getPcInfo() {
         return pcData;
     }
 
-
 	public Stage getPrimaryStage(){
 		return primaryStage;
+	}
+
+	public Database getDatabase(){
+		return database;
 	}
 
 	@Override
@@ -136,6 +142,98 @@ public class ServerApp extends Application {
             e.printStackTrace();
         }
     }
+
+	public void showGeneralStatistics(){
+
+		try {
+            // Load the fxml file and create a new stage for the popup.
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(ServerApp.class.getResource("view/GeneralStatistics.fxml"));
+            AnchorPane page = (AnchorPane) loader.load();
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("General Statistics");
+            dialogStage.initModality(Modality.WINDOW_MODAL);
+            dialogStage.initOwner(primaryStage);
+            Scene scene = new Scene(page);
+            dialogStage.setScene(scene);
+
+            // Set the persons into the controller.
+            GeneralStatisticsController controller = loader.getController();
+            controller.setServerApp(this);
+            controller.setDatabase(database);
+            controller.showStatistics();
+
+            dialogStage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+	public String showCaptureSelectionDialog(){
+
+		try {
+			//Load the fxml file and create a new stage for the popup dialog.
+			FXMLLoader loader = new FXMLLoader();
+			loader.setLocation(ServerApp.class.getResource("view/CaptureSelectionDialog.fxml"));
+			AnchorPane captureSelectionDialog = (AnchorPane) loader.load();
+
+			Stage captureStage = new Stage();
+			captureStage.setTitle("Capture Selection");
+			captureStage.initModality(Modality.WINDOW_MODAL);
+			captureStage.initOwner(primaryStage);
+			Scene scene = new Scene(captureSelectionDialog);
+			captureStage.setScene(scene);
+
+
+			CaptureSelectionDialogController controller = loader.getController();
+			controller.setServerApp(this);
+			controller.setDatabase(database);
+			controller.setDialogStage(captureStage);
+
+			captureStage.showAndWait();
+			return controller.getDate();
+
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+			return "";
+		}
+	}
+
+	public void showAverageStorageLoadDialog(){
+		try {
+            // Load the fxml file and create a new stage for the popup.
+            FXMLLoader loader = new FXMLLoader();
+            loader.setLocation(ServerApp.class.getResource("view/AverageStorageLoadStatisticDialog.fxml"));
+            AnchorPane page = (AnchorPane) loader.load();
+            Stage dialogStage = new Stage();
+            dialogStage.setTitle("Average Storage Load");
+            dialogStage.initModality(Modality.WINDOW_MODAL);
+            dialogStage.initOwner(primaryStage);
+            Scene scene = new Scene(page);
+            dialogStage.setScene(scene);
+
+            // Set the persons into the controller.
+            AverageStorageLoadStatisticDialogController controller = loader.getController();
+            controller.setServerApp(this);
+            controller.setDatabase(database);
+            controller.showStatistics();
+
+            dialogStage.show();
+
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+	}
+
+	public void setCurentPcView(String date){
+		curentPcView = date;
+	}
+
+	public String getCurentPcView(){
+		return curentPcView;
+	}
 
 //	public void showFilterEditDialog(){
 //		try {
